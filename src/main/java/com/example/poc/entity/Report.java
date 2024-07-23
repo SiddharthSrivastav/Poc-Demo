@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -17,8 +18,9 @@ public class Report {
     public static final String SEQUENCE_NAME = "report_id_seq";
     @Id
     private Long reportId;
-    private String department;
+    private List<String> department;
     private String description;
     private String assignedTo;
     private LocalDateTime dateOfCreation;
+
 }

@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -44,21 +45,24 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public String saveReport(ReportRequestDto requestDto) {
-        if (StringUtils.isBlank(requestDto.getDepartment())) {
+        List<String> requestDept= requestDto.getDepartment();
+        if (Objects.isNull(requestDept)) {
             throw new GenericException(HttpStatus.NOT_ACCEPTABLE, "Department Name can't be blank");
         }
-        Report report = Report.builder().assignedTo(requestDto.getAssignedTo()).description(requestDto.getDescription()).department(requestDto.getDepartment().toUpperCase()).reportId(sequenceGenerator.generateSequence(Report.SEQUENCE_NAME)).build();
-        log.info("generated report entity: ", report);
+        requestDept=requestDept.stream().map(String::toUpperCase).collect(Collectors.toList());
         List<String> departments = departmentRepo.allDepartments();
-        log.info("Checking if department {} exists in {}", report.getDepartment().toUpperCase(), departments);
-        if (departments.contains(report.getDepartment().toUpperCase())) {
-            report.setDateOfCreation(LocalDateTime.now());
-            reportRepo.save(report);
-            log.info("Report saved successfully");
-        } else {
+        log.info("Checking if department {} exists in {}", requestDept, departments);
+        if (!requestDept.stream().allMatch(departments::contains)) {
             log.error("Error validating department:");
             throw new GenericException(HttpStatus.NOT_ACCEPTABLE, "Incorrect department");
         }
+        Report report = Report.builder().assignedTo(requestDto.getAssignedTo()).description(requestDto.getDescription()).department(requestDept).reportId(sequenceGenerator.generateSequence(Report.SEQUENCE_NAME)).build();
+        log.info("generated report entity: ", report);
+
+        report.setDateOfCreation(LocalDateTime.now());
+        reportRepo.save(report);
+        log.info("Report saved successfully");
+
         return report.getReportId().toString();
 
     }
